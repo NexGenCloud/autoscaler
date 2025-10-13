@@ -94,6 +94,8 @@ const (
 	RancherProviderName = "rancher"
 	// UthoProviderName gets the provider name of utho
 	UthoProviderName = "utho"
+	// HyperstackProviderName gets the provider name of hyperstack
+	HyperstackProviderName = "hyperstack"
 )
 
 // GpuConfig contains the label, type and the resource name for a GPU.

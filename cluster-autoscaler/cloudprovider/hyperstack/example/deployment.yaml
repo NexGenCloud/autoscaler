@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+  labels:
+    app: cluster-autoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  template:
+    metadata:
+      labels:
+        app: cluster-autoscaler
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    spec:
+      serviceAccountName: cluster-autoscaler
+      containers:
+        - name: cluster-autoscaler
+          image: ghcr.io/nexgencloud/autoscaler/cluster-autoscaler:latest
+          imagePullPolicy: Always
+          command:
+          command:
+            - ./cluster-autoscaler
+            - --cloud-provider=hyperstack
+            - --namespace=kube-system
+            # Refresh/scan interval
+            - --scan-interval=60s
+            # Scale down settings
+            - --scale-down-enabled=true
+            - --scale-down-utilization-threshold=0.6
+            - --scale-down-unneeded-time=10m
+            - --scale-down-delay-after-add=10m
+            - --scale-down-delay-after-delete=10m
+            - --scale-down-delay-after-failure=10m
+            # Safety and scheduling
+            - --skip-nodes-with-local-storage=false
+            - --skip-nodes-with-system-pods=true
+            - --max-graceful-termination-sec=300
+            - --max-node-provision-time=5m 
+            - --balance-similar-node-groups=true
+            - --ignore-daemonsets-utilization=true
+            - --v=4
+
+          env:
+            - name: HYPERSTACK_API_KEY
+              value: ""
+            - name: HYPERSTACK_API_SERVER
+              value: ""
+          resources:
+            limits:
+              cpu: 100m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 300Mi
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          effect: NoSchedule
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - cluster-autoscaler
+              topologyKey: "kubernetes.io/hostname"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-autoscaler
+rules:
+  - apiGroups: [""]
+    resources: ["events", "endpoints", "configmaps"]
+    verbs: ["create", "patch", "get", "list", "watch", "update"]
+  - apiGroups: [""]
+    resources: ["pods/eviction"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["update"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    resourceNames: ["cluster-autoscaler"]
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["watch", "list", "get", "update"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "replicationcontrollers", "persistentvolumeclaims", "persistentvolumes"]
+    verbs: ["watch", "list", "get"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "daemonsets", "replicasets", "deployments"]
+    verbs: ["watch", "list", "get"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses", "csinodes"]
+    verbs: ["watch", "list", "get"]
+  - apiGroups: ["batch", "extensions"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "list", "watch", "update", "delete"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["watch", "list"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csidrivers", "volumeattachments", "csistoragecapacities"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-autoscaler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-autoscaler
+subjects:
+  - kind: ServiceAccount
+    name: cluster-autoscaler
+    namespace: kube-system

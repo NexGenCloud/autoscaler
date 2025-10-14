@@ -43,6 +43,7 @@ type hyperstackNodeGroupClient interface {
 	GetClusterNodesWithResponse(ctx context.Context, clusterId int) (*[]hyperstack.ClusterNodeFields, error)
 	CreateNodeWithResponse(ctx context.Context, clusterId int, count *int, nodeGroup *string) (*hyperstack.ClusterNodesListResponse, error)
 	DeleteClusterNodeWithResponse(ctx context.Context, clusterId int, nodeId int) (*hyperstack.ResponseModel, error)
+	DeleteClusterNodesWithResponse(ctx context.Context, clusterId int, nodeIds hyperstack.DeleteClusterNodesFields) (*hyperstack.ResponseModel, error)
 }
 
 type Hyperstack struct {
@@ -171,7 +172,7 @@ func (h *Hyperstack) CreateNodeWithResponse(ctx context.Context, clusterId int, 
 	if err != nil {
 		return nil, err
 	}
-	role := hyperstack.Worker
+	role := hyperstack.CreateClusterNodeFieldsRoleWorker
 	body := hyperstack.CreateClusterNodeFields{
 		Count:     count,
 		NodeGroup: nodeGroup,
@@ -260,6 +261,51 @@ func (h *Hyperstack) DeleteClusterNodeWithResponse(ctx context.Context, clusterI
 	}
 	return result.JSON200, nil
 }
+
+func (h *Hyperstack) DeleteClusterNodesWithResponse(ctx context.Context, clusterId int, nodeIds hyperstack.DeleteClusterNodesFields) (*hyperstack.ResponseModel, error) {
+	klog.V(4).Info("[DeleteClusterNodesWithResponse] Deleting cluster nodes with arguments ", clusterId, nodeIds)
+	if h.Client == nil {
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Hyperstack client is not initialized")
+	}
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	if err != nil {
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Error initializing client: %v", err)
+	}
+	result, err := client.DeleteClusterNodesWithResponse(ctx, clusterId, nodeIds)
+	if err != nil {
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Error calling DeleteClusterNode: %v", err)
+	}
+	if result == nil {
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Empty response from DeleteClusterNodesWithResponse")
+	}
+	if result.JSON400 != nil {
+		errorReason := "unknown error"
+		if result.JSON400.ErrorReason != nil {
+			errorReason = *result.JSON400.ErrorReason
+		}
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Error reason: %s | error code: %d)", errorReason, result.StatusCode())
+	}
+	if result.JSON401 != nil {
+		errorReason := "unknown error"
+		if result.JSON401.ErrorReason != nil {
+			errorReason = *result.JSON401.ErrorReason
+		}
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Error reason: %s | error code: %d)", errorReason, result.StatusCode())
+	}
+	if result.JSON404 != nil {
+		errorReason := "unknown error"
+		if result.JSON404.ErrorReason != nil {
+			errorReason = *result.JSON404.ErrorReason
+		}
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Error reason: %s | error code: %d)", errorReason, result.StatusCode())
+	}
+	if result.JSON200 == nil {
+		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Result is nil (status code: %d)", result.StatusCode())
+	}
+	return result.JSON200, nil
+
+}
+
 func (h *Hyperstack) GetClusterNodesWithResponse(ctx context.Context, clusterId int) (*[]hyperstack.ClusterNodeFields, error) {
 	klog.V(4).Info("[GetClusterNodesWithResponse] Getting cluster nodes with arguments ", clusterId)
 	if h.Client == nil {

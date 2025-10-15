@@ -23,7 +23,6 @@ spec:
           image: ghcr.io/nexgencloud/autoscaler/cluster-autoscaler:latest
           imagePullPolicy: Always
           command:
-          command:
             - ./cluster-autoscaler
             - --cloud-provider=hyperstack
             - --namespace=kube-system

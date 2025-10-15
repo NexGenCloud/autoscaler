@@ -106,6 +106,7 @@ func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 	ctx := context.Background()
 	cloud := n.manager.client
 	nodeIDsInt := make([]int, 0)
+	nodeNames := make([]string, 0)
 	for _, node := range nodes {
 		nodeID, ok := node.Labels[nodeIdLabel]
 		nodeRole := node.Labels[nodeRoleLabel]
@@ -122,7 +123,7 @@ func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 			return err
 		}
 		nodeIDsInt = append(nodeIDsInt, nodeIDInt)
-
+		nodeNames = append(nodeNames, node.Name)
 	}
 	nodeIDs := hyperstack.DeleteClusterNodesFields{
 		Ids: &nodeIDsInt,
@@ -133,6 +134,10 @@ func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 		return err
 	}
 	*n.nodeGroup.Count = *n.nodeGroup.Count - len(nodeIDsInt)
+	err = DeleteNodeObject(nodeNames)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

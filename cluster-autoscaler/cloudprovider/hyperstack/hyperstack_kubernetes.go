@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -83,4 +84,23 @@ func GetNodeLabel(labelKey string) (string, error) {
 		return "", fmt.Errorf("label %s not found on node %s", labelKey, instanceHostname)
 	}
 	return value, nil
+}
+
+func DeleteNodeObject(nodeNames []string) error {
+	klog.Infof("Deleting node objects: %v", nodeNames)
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get in-cluster config: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes client: %v", err)
+	}
+	for _, nodeName := range nodeNames {
+		err := clientset.CoreV1().Nodes().Delete(context.TODO(), nodeName, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to delete node %s: %v", nodeName, err)
+		}
+	}
+	return nil
 }

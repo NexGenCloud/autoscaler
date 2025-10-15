@@ -89,7 +89,7 @@ rules:
     verbs: ["get", "update"]
   - apiGroups: [""]
     resources: ["nodes"]
-    verbs: ["watch", "list", "get", "update"]
+    verbs: ["watch", "list", "get", "update", "delete"]
   - apiGroups: [""]
     resources: ["pods", "services", "replicationcontrollers", "persistentvolumeclaims", "persistentvolumes"]
     verbs: ["watch", "list", "get"]

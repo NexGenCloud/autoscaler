@@ -23,7 +23,6 @@ spec:
           image: ghcr.io/nexgencloud/autoscaler/cluster-autoscaler:latest
           imagePullPolicy: Always
           command:
-          command:
             - ./cluster-autoscaler
             - --cloud-provider=hyperstack
             - --namespace=kube-system
@@ -44,12 +43,9 @@ spec:
             - --balance-similar-node-groups=true
             - --ignore-daemonsets-utilization=true
             - --v=4
-
-          env:
-            - name: HYPERSTACK_API_KEY
-              value: ""
-            - name: HYPERSTACK_API_SERVER
-              value: ""
+          envFrom:
+          - configMapRef:
+              name: cluster-autoscaler-cm
           resources:
             limits:
               cpu: 100m
@@ -93,7 +89,7 @@ rules:
     verbs: ["get", "update"]
   - apiGroups: [""]
     resources: ["nodes"]
-    verbs: ["watch", "list", "get", "update"]
+    verbs: ["watch", "list", "get", "update", "delete"]
   - apiGroups: [""]
     resources: ["pods", "services", "replicationcontrollers", "persistentvolumeclaims", "persistentvolumes"]
     verbs: ["watch", "list", "get"]

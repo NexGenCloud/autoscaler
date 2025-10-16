@@ -105,6 +105,8 @@ func (n *NodeGroup) AtomicIncreaseSize(delta int) error {
 func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 	ctx := context.Background()
 	cloud := n.manager.client
+	nodeIDsInt := make([]int, 0)
+	nodeNames := make([]string, 0)
 	for _, node := range nodes {
 		nodeID, ok := node.Labels[nodeIdLabel]
 		nodeRole := node.Labels[nodeRoleLabel]
@@ -120,12 +122,21 @@ func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 		if err != nil {
 			return err
 		}
-		_, err = cloud.DeleteClusterNodeWithResponse(ctx, n.clusterId, nodeIDInt)
-		if err != nil {
-			return err
-		}
-		*n.nodeGroup.Count = *n.nodeGroup.Count - 1
-		klog.V(4).Info("[DeleteNodes] Node deleted, new count: ", *n.nodeGroup.Count)
+		nodeIDsInt = append(nodeIDsInt, nodeIDInt)
+		nodeNames = append(nodeNames, node.Name)
+	}
+	nodeIDs := hyperstack.DeleteClusterNodesFields{
+		Ids: &nodeIDsInt,
+	}
+
+	_, err := cloud.DeleteClusterNodesWithResponse(ctx, n.clusterId, nodeIDs)
+	if err != nil {
+		return err
+	}
+	*n.nodeGroup.Count = *n.nodeGroup.Count - len(nodeIDsInt)
+	err = DeleteNodeObject(nodeNames)
+	if err != nil {
+		return err
 	}
 	return nil
 }

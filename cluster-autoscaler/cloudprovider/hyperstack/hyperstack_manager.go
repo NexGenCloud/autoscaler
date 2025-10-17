@@ -263,7 +263,7 @@ func (h *Hyperstack) DeleteClusterNodeWithResponse(ctx context.Context, clusterI
 }
 
 func (h *Hyperstack) DeleteClusterNodesWithResponse(ctx context.Context, clusterId int, nodeIds hyperstack.DeleteClusterNodesFields) (*hyperstack.ResponseModel, error) {
-	klog.V(4).Info("[DeleteClusterNodesWithResponse] Deleting cluster nodes with arguments ", clusterId, nodeIds)
+	klog.V(4).Info("[DeleteClusterNodesWithResponse] Deleting cluster nodes with arguments ", clusterId, nodeIds.Ids)
 	if h.Client == nil {
 		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Hyperstack client is not initialized")
 	}

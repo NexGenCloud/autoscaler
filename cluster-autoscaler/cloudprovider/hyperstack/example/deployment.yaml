@@ -42,6 +42,7 @@ spec:
             - --max-node-provision-time=5m 
             - --balance-similar-node-groups=true
             - --ignore-daemonsets-utilization=true
+            - --node-deletion-batcher-interval=10s
             - --v=4
           envFrom:
           - configMapRef:

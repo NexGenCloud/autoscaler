@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// Package hyperstack contains Hyperstack cloud provider helpers for Kubernetes API interactions.
 package hyperstack
 
 import (
@@ -32,6 +33,7 @@ const (
 	metadataURLTemplate = "http://169.254.169.254/openstack/latest/meta_data.json"
 )
 
+// Payload is the metadata payload returned by the instance metadata service.
 type Payload struct {
 	UUID          string            `json:"uuid"`
 	Meta          Meta              `json:"meta"`
@@ -47,18 +49,21 @@ type Payload struct {
 	DedicatedCPUs []any             `json:"dedicated_cpus"`
 }
 
+// Meta represents selected metadata attributes exposed by the provider.
 type Meta struct {
 	Cluster     string `json:"cluster"`
 	Role        string `json:"role"`
 	InfrahubKey string `json:"infrahub_key"`
 }
 
+// Key represents a public key entry in the metadata response.
 type Key struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
 	Data string `json:"data"`
 }
 
+// GetMetadata retrieves instance metadata from the metadata endpoint.
 func GetMetadata() (Payload, error) {
 	resp, err := http.Get(metadataURLTemplate)
 	if err != nil {
@@ -76,6 +81,7 @@ func GetMetadata() (Payload, error) {
 	return payload, nil
 }
 
+// GetNodeLabel returns a label value for the current node given a label key.
 func GetNodeLabel(labelKey string) (string, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -101,6 +107,7 @@ func GetNodeLabel(labelKey string) (string, error) {
 	return value, nil
 }
 
+// DeleteNodeObject deletes Kubernetes Node objects by their names.
 func DeleteNodeObject(nodeNames []string) error {
 	klog.Infof("Deleting node objects: %v", nodeNames)
 	config, err := rest.InClusterConfig()

@@ -44,9 +44,18 @@ spec:
             - --ignore-daemonsets-utilization=true
             - --node-deletion-batcher-interval=10s
             - --v=4
-          envFrom:
-          - configMapRef:
-              name: cluster-autoscaler-cm
+          env:
+            - name: HYPERSTACK_API_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: cluster-autoscaler-cm
+                  key: HYPERSTACK_API_SERVER
+                  optional: true
+            - name: HYPERSTACK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cluster-autoscaler-secret
+                  key: HYPERSTACK_API_KEY
           resources:
             limits:
               cpu: 100m

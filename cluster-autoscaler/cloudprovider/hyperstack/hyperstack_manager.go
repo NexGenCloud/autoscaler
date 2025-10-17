@@ -31,6 +31,7 @@ const (
 	clusterIdLabel = "hyperstack.cloud/cluster-id"
 )
 
+// HyperstackClient holds configuration for communicating with the Hyperstack API.
 type HyperstackClient struct {
 	Client    *http.Client
 	ApiKey    string
@@ -46,9 +47,12 @@ type hyperstackNodeGroupClient interface {
 	DeleteClusterNodesWithResponse(ctx context.Context, clusterId int, nodeIds hyperstack.DeleteClusterNodesFields) (*hyperstack.ResponseModel, error)
 }
 
+// Hyperstack implements hyperstackNodeGroupClient using the generated SDK.
 type Hyperstack struct {
 	Client *HyperstackClient
 }
+
+// Manager orchestrates node group state and API client interactions.
 type Manager struct {
 	client     hyperstackNodeGroupClient
 	nodeGroups []*NodeGroup
@@ -65,6 +69,7 @@ func newManager() (*Manager, error) {
 	}, nil
 }
 
+// NewHyperstackClient creates a client using env vars HYPERSTACK_API_KEY and HYPERSTACK_API_SERVER.
 func NewHyperstackClient() (*HyperstackClient, error) {
 	apiKey := os.Getenv("HYPERSTACK_API_KEY")
 	apiServer := os.Getenv("HYPERSTACK_API_SERVER")
@@ -81,6 +86,7 @@ func NewHyperstackClient() (*HyperstackClient, error) {
 	}, nil
 }
 
+// GetAddHeadersFn returns a request editor which injects the API key header.
 func (c HyperstackClient) GetAddHeadersFn() func(ctx context.Context, req *http.Request) error {
 	return func(ctx context.Context, req *http.Request) error {
 		req.Header.Add("api_key", c.ApiKey)
@@ -88,6 +94,7 @@ func (c HyperstackClient) GetAddHeadersFn() func(ctx context.Context, req *http.
 	}
 }
 
+// GetClusterWithResponse fetches cluster details.
 func (h *Hyperstack) GetClusterWithResponse(ctx context.Context, clusterId int) (*hyperstack.ClusterFields, error) {
 	if h.Client == nil {
 		return nil, fmt.Errorf("hyperstack client is not initialized")
@@ -118,6 +125,7 @@ func (h *Hyperstack) GetClusterWithResponse(ctx context.Context, clusterId int) 
 	return result.JSON200.Cluster, nil
 }
 
+// ListNodeGroupsWithResponse fetches node groups for a cluster.
 func (h *Hyperstack) ListNodeGroupsWithResponse(ctx context.Context, clusterId int) (*[]hyperstack.ClusterNodeGroupFields, error) {
 	if h.Client == nil {
 		return nil, fmt.Errorf("hyperstack client is not initialized")
@@ -163,6 +171,8 @@ func (h *Hyperstack) ListNodeGroupsWithResponse(ctx context.Context, clusterId i
 	list := result.JSON200.NodeGroups
 	return list, nil
 }
+
+// CreateNodeWithResponse requests creation of nodes in a node group.
 func (h *Hyperstack) CreateNodeWithResponse(ctx context.Context, clusterId int, count *int, nodeGroup *string) (*hyperstack.ClusterNodesListResponse, error) {
 	klog.V(4).Info("[CreateNodeWithResponse] Creating node with arguments ", clusterId, count, nodeGroup)
 	if h.Client == nil {
@@ -219,6 +229,8 @@ func (h *Hyperstack) CreateNodeWithResponse(ctx context.Context, clusterId int, 
 	// fmt.Println(result.StatusCode(), "=====")
 	return result.JSON201, nil
 }
+
+// DeleteClusterNodeWithResponse deletes a single cluster node by ID.
 func (h *Hyperstack) DeleteClusterNodeWithResponse(ctx context.Context, clusterId int, nodeId int) (*hyperstack.ResponseModel, error) {
 	klog.V(4).Info("[DeleteClusterNodeWithResponse] Deleting cluster node with arguments ", clusterId, nodeId)
 	if h.Client == nil {
@@ -262,6 +274,7 @@ func (h *Hyperstack) DeleteClusterNodeWithResponse(ctx context.Context, clusterI
 	return result.JSON200, nil
 }
 
+// DeleteClusterNodesWithResponse deletes multiple cluster nodes by IDs.
 func (h *Hyperstack) DeleteClusterNodesWithResponse(ctx context.Context, clusterId int, nodeIds hyperstack.DeleteClusterNodesFields) (*hyperstack.ResponseModel, error) {
 	klog.V(4).Info("[DeleteClusterNodesWithResponse] Deleting cluster nodes with arguments ", clusterId, nodeIds.Ids)
 	if h.Client == nil {
@@ -306,6 +319,7 @@ func (h *Hyperstack) DeleteClusterNodesWithResponse(ctx context.Context, cluster
 
 }
 
+// GetClusterNodesWithResponse lists nodes for a cluster.
 func (h *Hyperstack) GetClusterNodesWithResponse(ctx context.Context, clusterId int) (*[]hyperstack.ClusterNodeFields, error) {
 	klog.V(4).Info("[GetClusterNodesWithResponse] Getting cluster nodes with arguments ", clusterId)
 	if h.Client == nil {
@@ -352,6 +366,7 @@ func (h *Hyperstack) GetClusterNodesWithResponse(ctx context.Context, clusterId 
 	return result.JSON200.Nodes, nil
 }
 
+// Refresh updates manager node groups from the provider state.
 func (m *Manager) Refresh() error {
 	ctx := context.Background()
 	clusterId, err := GetNodeLabel(clusterIdLabel)

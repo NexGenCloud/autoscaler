@@ -67,16 +67,16 @@ type Key struct {
 func GetMetadata() (Payload, error) {
 	resp, err := http.Get(metadataURLTemplate)
 	if err != nil {
-		panic(fmt.Errorf("failed to GET metadata: %w", err))
+		return Payload{}, fmt.Errorf("failed to GET metadata: %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		panic(fmt.Errorf("failed to read body: %w", err))
+		return Payload{}, fmt.Errorf("failed to read body: %w", err)
 	}
 	var payload Payload
 	if err := json.Unmarshal(body, &payload); err != nil {
-		panic(fmt.Errorf("failed to unmarshal JSON: %w", err))
+		return Payload{}, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 	return payload, nil
 }
@@ -94,6 +94,9 @@ func GetNodeLabel(labelKey string) (string, error) {
 	response, err := GetMetadata()
 	if err != nil {
 		return "", fmt.Errorf("failed to get metadata: %v", err)
+	}
+	if response.Name == "" {
+		return "", fmt.Errorf("instance hostname is empty")
 	}
 	instanceHostname := response.Name
 	node, err := clientset.CoreV1().Nodes().Get(context.TODO(), instanceHostname, metav1.GetOptions{})

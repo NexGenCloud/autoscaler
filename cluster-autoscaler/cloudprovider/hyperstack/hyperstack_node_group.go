@@ -35,6 +35,7 @@ const (
 	nodeGroupLabel = "hyperstack.cloud/node-group-id"
 )
 
+// NodeGroup represents a Hyperstack node group managed by the autoscaler.
 type NodeGroup struct {
 	// client    hyperstackNodeGroupClient
 	id        int
@@ -47,8 +48,6 @@ type NodeGroup struct {
 	status    string
 }
 
-// NodeGroup contains configuration info and functions to control a set
-// of nodes that have the same capacity and set of labels.
 // MaxSize returns maximum size of the node group.
 func (n *NodeGroup) MaxSize() int {
 	return n.maxSize

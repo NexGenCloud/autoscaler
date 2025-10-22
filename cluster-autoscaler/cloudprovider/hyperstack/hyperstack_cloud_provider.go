@@ -139,6 +139,7 @@ func (h *hyperstackCloudProvider) Refresh() error {
 	return h.manager.Refresh()
 }
 
+// BuildHyperstack constructs the Hyperstack cloud provider instance.
 func BuildHyperstack(
 	opts config.AutoscalingOptions,
 	do cloudprovider.NodeGroupDiscoveryOptions,

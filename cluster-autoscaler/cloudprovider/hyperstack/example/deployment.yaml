@@ -63,21 +63,25 @@ spec:
             requests:
               cpu: 100m
               memory: 300Mi
-      tolerations:
-        - key: "node-role.kubernetes.io/master"
-          effect: NoSchedule
-        - key: "CriticalAddonsOnly"
-          operator: "Exists"
       affinity:
-        podAntiAffinity:
+        nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - cluster-autoscaler
-              topologyKey: "kubernetes.io/hostname"
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+              - matchExpressions:
+                - key: node-role.kubernetes.io/master
+                  operator: Exists
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

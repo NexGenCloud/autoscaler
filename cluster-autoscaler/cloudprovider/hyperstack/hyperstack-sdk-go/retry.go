@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -57,7 +58,8 @@ func (rc *RetryConfig) calculateDelay(attempt int) time.Duration {
 	if delay > rc.MaxDelay {
 		delay = rc.MaxDelay
 	}
-	return delay
+	jitter := time.Duration(float64(delay) * (0.5 + rand.Float64()) * 0.5)
+	return jitter
 }
 
 // RetryableHTTPClient wraps an http.Client with retry logic
@@ -106,6 +108,7 @@ func (r *RetryableHTTPClient) Do(req *http.Request) (*http.Response, error) {
 		if r.retryConfig.isRetryableError(resp.StatusCode) {
 			lastResp = resp
 			if attempt < r.retryConfig.MaxRetries {
+				resp.Body.Close()
 				delay := r.retryConfig.calculateDelay(attempt)
 				time.Sleep(delay)
 				continue

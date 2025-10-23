@@ -27,7 +27,7 @@ spec:
             - --cloud-provider=hyperstack
             - --namespace=kube-system
             # Refresh/scan interval
-            - --scan-interval=60s
+            - --scan-interval=20s
             # Scale down settings
             - --scale-down-enabled=true
             - --scale-down-utilization-threshold=0.6
@@ -43,6 +43,7 @@ spec:
             - --balance-similar-node-groups=true
             - --ignore-daemonsets-utilization=true
             - --node-deletion-batcher-interval=10s
+            - --max-bulk-soft-taint-count=0
             - --v=4
           env:
             - name: HYPERSTACK_API_SERVER

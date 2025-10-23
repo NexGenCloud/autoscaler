@@ -99,7 +99,10 @@ func (h *Hyperstack) GetClusterWithResponse(ctx context.Context, clusterId int) 
 	if h.Client == nil {
 		return nil, fmt.Errorf("hyperstack client is not initialized")
 	}
-	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer,
+		hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()),
+		hyperstack.WithTimeoutConfig(hyperstack.DefaultTimeoutConfig()),
+		hyperstack.WithRetryConfig(hyperstack.DefaultRetryConfig()))
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +133,10 @@ func (h *Hyperstack) ListNodeGroupsWithResponse(ctx context.Context, clusterId i
 	if h.Client == nil {
 		return nil, fmt.Errorf("hyperstack client is not initialized")
 	}
-	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer,
+		hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()),
+		hyperstack.WithTimeoutConfig(hyperstack.DefaultTimeoutConfig()),
+		hyperstack.WithRetryConfig(hyperstack.DefaultRetryConfig()))
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +184,10 @@ func (h *Hyperstack) CreateNodeWithResponse(ctx context.Context, clusterId int, 
 	if h.Client == nil {
 		return nil, fmt.Errorf("[CreateNodeWithResponse] Hyperstack client is not initialized")
 	}
-	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer,
+		hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()),
+		hyperstack.WithTimeoutConfig(hyperstack.DefaultTimeoutConfig()),
+		hyperstack.WithRetryConfig(hyperstack.DefaultRetryConfig()))
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +245,10 @@ func (h *Hyperstack) DeleteClusterNodeWithResponse(ctx context.Context, clusterI
 	if h.Client == nil {
 		return nil, fmt.Errorf("[DeleteClusterNodeWithResponse] Hyperstack client is not initialized")
 	}
-	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer,
+		hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()),
+		hyperstack.WithTimeoutConfig(hyperstack.DefaultTimeoutConfig()),
+		hyperstack.WithRetryConfig(hyperstack.DefaultRetryConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("[DeleteClusterNodeWithResponse] Error initializing client: %v", err)
 	}
@@ -280,7 +292,10 @@ func (h *Hyperstack) DeleteClusterNodesWithResponse(ctx context.Context, cluster
 	if h.Client == nil {
 		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Hyperstack client is not initialized")
 	}
-	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer,
+		hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()),
+		hyperstack.WithTimeoutConfig(hyperstack.DefaultTimeoutConfig()),
+		hyperstack.WithRetryConfig(hyperstack.DefaultRetryConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("[DeleteClusterNodesWithResponse] Error initializing client: %v", err)
 	}
@@ -325,7 +340,10 @@ func (h *Hyperstack) GetClusterNodesWithResponse(ctx context.Context, clusterId 
 	if h.Client == nil {
 		return nil, fmt.Errorf("[GetClusterNodesWithResponse] Hyperstack client is not initialized")
 	}
-	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer, hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()))
+	client, err := hyperstack.NewClientWithResponses(h.Client.ApiServer,
+		hyperstack.WithRequestEditorFn(h.Client.GetAddHeadersFn()),
+		hyperstack.WithTimeoutConfig(hyperstack.DefaultTimeoutConfig()),
+		hyperstack.WithRetryConfig(hyperstack.DefaultRetryConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("[GetClusterNodesWithResponse] Error initializing client: %v", err)
 	}

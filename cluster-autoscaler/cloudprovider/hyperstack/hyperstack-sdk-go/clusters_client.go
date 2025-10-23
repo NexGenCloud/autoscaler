@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -330,6 +331,12 @@ type Client struct {
 	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
 	RequestEditors []RequestEditorFn
+
+	// Timeout configuration for different operation types
+	TimeoutConfig *TimeoutConfig
+
+	// Retry configuration for handling transient errors
+	RetryConfig *RetryConfig
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -339,7 +346,9 @@ type ClientOption func(*Client) error
 func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
-		Server: server,
+		Server:        server,
+		TimeoutConfig: DefaultTimeoutConfig(),
+		RetryConfig:   DefaultRetryConfig(),
 	}
 	// mutate client and add all optional params
 	for _, o := range opts {
@@ -353,7 +362,12 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	}
 	// create httpClient, if not already present
 	if client.Client == nil {
-		client.Client = &http.Client{}
+		// Create a basic HTTP client with reasonable timeouts
+		httpClient := &http.Client{
+			Timeout: 30 * time.Second, // Overall timeout as fallback
+		}
+		// Wrap with retry logic
+		client.Client = NewRetryableHTTPClient(httpClient, client.RetryConfig)
 	}
 	return &client, nil
 }
@@ -372,6 +386,22 @@ func WithHTTPClient(doer HttpRequestDoer) ClientOption {
 func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 	return func(c *Client) error {
 		c.RequestEditors = append(c.RequestEditors, fn)
+		return nil
+	}
+}
+
+// WithTimeoutConfig allows setting custom timeout configuration
+func WithTimeoutConfig(timeoutConfig *TimeoutConfig) ClientOption {
+	return func(c *Client) error {
+		c.TimeoutConfig = timeoutConfig
+		return nil
+	}
+}
+
+// WithRetryConfig allows setting custom retry configuration
+func WithRetryConfig(retryConfig *RetryConfig) ClientOption {
+	return func(c *Client) error {
+		c.RetryConfig = retryConfig
 		return nil
 	}
 }
@@ -1440,6 +1470,13 @@ func NewGettingClusterDetailRequest(server string, id int) (*http.Request, error
 }
 
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+	// Apply timeout based on HTTP method
+	if c.TimeoutConfig != nil {
+		timeoutCtx, cancel := WithTimeout(ctx, req.Method, c.TimeoutConfig)
+		defer cancel()
+		req = req.WithContext(timeoutCtx)
+	}
+	
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
 			return err

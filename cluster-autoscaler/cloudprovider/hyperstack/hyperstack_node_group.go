@@ -39,6 +39,7 @@ const (
 type NodeGroup struct {
 	// client    hyperstackNodeGroupClient
 	id        int
+	count     int
 	minSize   int
 	maxSize   int
 	nodeGroup *hyperstack.ClusterNodeGroupFields
@@ -63,8 +64,8 @@ func (n *NodeGroup) MinSize() int {
 // to Size() once everything stabilizes (new nodes finish startup and registration or
 // removed nodes are deleted completely). Implementation required.
 func (n *NodeGroup) TargetSize() (int, error) {
-	klog.Info("==== TargetSize === \nn.nodeGroup.Count: ", *n.nodeGroup.Count)
-	return *n.nodeGroup.Count, nil
+	klog.Info("==== TargetSize === \nn.count: ", n.count)
+	return n.count, nil
 }
 
 // IncreaseSize increases the size of the node group. To delete a node you need
@@ -73,10 +74,10 @@ func (n *NodeGroup) TargetSize() (int, error) {
 func (n *NodeGroup) IncreaseSize(delta int) error {
 	klog.Infof("Increasing size of node group %s by %d", *n.nodeGroup.Name, delta)
 	ctx := context.Background()
-	targetSize := *n.nodeGroup.Count + delta
+	targetSize := n.count + delta
 	if targetSize > n.MaxSize() {
 		return fmt.Errorf("size increase is too large. current: %d desired: %d max: %d",
-			*n.nodeGroup.Count, targetSize, n.MaxSize())
+			n.count, targetSize, n.MaxSize())
 	}
 	klog.Infof("Creating node with target size: %d\n", targetSize)
 	cloud := n.manager.client
@@ -84,7 +85,7 @@ func (n *NodeGroup) IncreaseSize(delta int) error {
 	if err != nil {
 		return err
 	}
-	n.nodeGroup.Count = &targetSize
+	n.count = targetSize
 	return nil
 }
 
@@ -136,7 +137,7 @@ func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 	if err != nil {
 		return err
 	}
-	*n.nodeGroup.Count = *n.nodeGroup.Count - len(nodeIDsInt)
+	n.count = n.count - len(nodeIDsInt)
 	err = DeleteNodeObject(nodeNames)
 	if err != nil {
 		return err

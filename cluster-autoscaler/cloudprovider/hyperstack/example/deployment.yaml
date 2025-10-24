@@ -43,7 +43,7 @@ spec:
             - --balance-similar-node-groups=true
             - --ignore-daemonsets-utilization=true
             - --node-deletion-batcher-interval=10s
-            - --max-bulk-soft-taint-count=0
+            - --max-bulk-soft-taint-count=0 # Given that Hyperstack node deletions can take a few minutes to complete, it makes sense to set --max-bulk-soft-taint-count=0 to avoid nodes being stuck in a soft-tainted state. This prevents unnecessary scheduling delays. Once node deletion latency improves, we can consider re-enabling soft tainting.
             - --v=4
           env:
             - name: HYPERSTACK_API_SERVER

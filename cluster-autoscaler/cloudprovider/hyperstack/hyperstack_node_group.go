@@ -35,6 +35,7 @@ const (
 	nodeGroupLabel = "hyperstack.cloud/node-group-id"
 )
 
+// NodeGroup represents a Hyperstack node group managed by the autoscaler.
 type NodeGroup struct {
 	// client    hyperstackNodeGroupClient
 	id        int
@@ -47,8 +48,6 @@ type NodeGroup struct {
 	status    string
 }
 
-// NodeGroup contains configuration info and functions to control a set
-// of nodes that have the same capacity and set of labels.
 // MaxSize returns maximum size of the node group.
 func (n *NodeGroup) MaxSize() int {
 	return n.maxSize
@@ -81,7 +80,7 @@ func (n *NodeGroup) IncreaseSize(delta int) error {
 	}
 	klog.Infof("Creating node with target size: %d\n", targetSize)
 	cloud := n.manager.client
-	_, err := cloud.CreateNodeWithResponse(ctx, n.clusterId, &targetSize, n.nodeGroup.Name)
+	_, err := cloud.CreateNodeWithResponse(ctx, n.clusterId, &delta, n.nodeGroup.Name)
 	if err != nil {
 		return err
 	}
@@ -103,6 +102,10 @@ func (n *NodeGroup) AtomicIncreaseSize(delta int) error {
 // failure or if the given node doesn't belong to this node group. This function
 // should wait until node group size is updated. Implementation required.
 func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
+	if len(n.manager.nodeGroups) == 0 {
+		klog.V(4).Info("[DeleteNodes] Skipping DeleteNodes, cluster is reconciling")
+		return nil
+	}
 	ctx := context.Background()
 	cloud := n.manager.client
 	nodeIDsInt := make([]int, 0)

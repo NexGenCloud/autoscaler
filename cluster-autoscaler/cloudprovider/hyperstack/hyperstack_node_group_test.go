@@ -61,6 +61,7 @@ func newTestNodeGroup(min, max, count, id int, name string) *NodeGroup {
 	}
 	return &NodeGroup{
 		id:        id,
+		count:     count,
 		minSize:   min,
 		maxSize:   max,
 		nodeGroup: ngFields,
@@ -99,8 +100,8 @@ func TestNodeGroup_IncreaseSize_Success(t *testing.T) {
 	if err := ng.IncreaseSize(2); err != nil {
 		t.Fatalf("IncreaseSize() unexpected error: %v", err)
 	}
-	if *ng.nodeGroup.Count != 4 {
-		t.Fatalf("IncreaseSize() count = %d, want 4", *ng.nodeGroup.Count)
+	if ng.count != 4 {
+		t.Fatalf("IncreaseSize() count = %d, want 4", ng.count)
 	}
 }
 

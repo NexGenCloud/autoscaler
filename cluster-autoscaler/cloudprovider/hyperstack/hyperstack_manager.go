@@ -407,9 +407,23 @@ func (m *Manager) Refresh() error {
 	if *cluster.IsReconciling {
 		return fmt.Errorf("[Refresh] Cluster is reconciling, skipping refresh")
 	}
+
 	for _, nodeGroup := range *nodeGroups {
 		if *nodeGroup.Role != "worker" {
 			continue
+		}
+		nodeObjectCount, err := GetNodeObjectCountByLabel(fmt.Sprintf("%s=%d", nodeGroupLabel, *nodeGroup.Id))
+		if err != nil {
+			return err
+		}
+		if nodeObjectCount < *nodeGroup.MinCount {
+			delta := *nodeGroup.MinCount - nodeObjectCount
+			klog.Infof("[Refresh] Node count is less than min count, adjusting node group %d by %d", *nodeGroup.Id, delta)
+			_, err = m.client.CreateNodeWithResponse(ctx, clusterIdInt, &delta, nodeGroup.Name)
+			if err != nil {
+				return err
+			}
+			break
 		}
 		if *nodeGroup.MaxCount <= *nodeGroup.MinCount {
 			klog.V(4).Infof("[Refresh] Skipping node group %d as maxCount (%d) <= minCount (%d)", *nodeGroup.Id, *nodeGroup.MaxCount, *nodeGroup.MinCount)
@@ -423,6 +437,7 @@ func (m *Manager) Refresh() error {
 		klog.V(4).Infof("[Refresh] adding node group | node group id: %d | node group count: %d", *nodeGroup.Id, *nodeGroup.Count)
 		group = append(group, &NodeGroup{
 			id:        *nodeGroup.Id,
+			count:     *nodeGroup.Count,
 			minSize:   *nodeGroup.MinCount,
 			maxSize:   *nodeGroup.MaxCount,
 			nodeGroup: &nodeGroup,

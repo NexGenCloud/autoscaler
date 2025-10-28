@@ -129,3 +129,21 @@ func DeleteNodeObject(nodeNames []string) error {
 	}
 	return nil
 }
+
+func GetNodeObjectCountByLabel(labelKey string) (int, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get in-cluster config: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create kubernetes client: %v", err)
+	}
+	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labelKey,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to list nodes: %v", err)
+	}
+	return len(nodeList.Items), nil
+}

@@ -30,9 +30,10 @@ import (
 )
 
 const (
-	nodeIdLabel    = "hyperstack.cloud/node-id"
-	nodeRoleLabel  = "node-role.kubernetes.io/worker"
-	nodeGroupLabel = "hyperstack.cloud/node-group-id"
+	nodeIdLabel               = "hyperstack.cloud/node-id"
+	nodeRoleLabel             = "node-role.kubernetes.io/worker"
+	nodeGroupLabel            = "hyperstack.cloud/node-group-id"
+	deleteCandidateAnnotation = "hyperstack.cloud/delete-candidate"
 )
 
 // NodeGroup represents a Hyperstack node group managed by the autoscaler.
@@ -120,6 +121,10 @@ func (n *NodeGroup) DeleteNodes(nodes []*apiv1.Node) error {
 		if nodeRole != "worker" {
 			klog.V(4).Infof("[DeleteNodes] Node %s is not a worker node, skipping", node.Name)
 			continue
+		}
+		err := AnnotateNodeObject(node.Name, deleteCandidateAnnotation, "true")
+		if err != nil {
+			return fmt.Errorf("failed to annotate node %s: %v", node.Name, err)
 		}
 		klog.V(4).Info("[DeleteNodes] Deleting node with arguments ", nodeID)
 		nodeIDInt, err := strconv.Atoi(nodeID)

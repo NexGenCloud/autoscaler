@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -130,6 +131,7 @@ func DeleteNodeObject(nodeNames []string) error {
 	return nil
 }
 
+// GetNodeObjectCountByLabel returns the number of nodes with the given label.
 func GetNodeObjectCountByLabel(labelKey string) (int, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -146,4 +148,68 @@ func GetNodeObjectCountByLabel(labelKey string) (int, error) {
 		return 0, fmt.Errorf("failed to list nodes: %v", err)
 	}
 	return len(nodeList.Items), nil
+}
+
+// AnnotateNodeObject annotates a node object with the given annotations.
+func AnnotateNodeObject(nodeName string, annotationKey string, annotationValue string) error {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get in-cluster config: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes client: %v", err)
+	}
+	node, err := clientset.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get node %s: %v", nodeName, err)
+	}
+	existingAnnotations := node.GetAnnotations()
+	if existingAnnotations == nil {
+		existingAnnotations = map[string]string{}
+	}
+	existingAnnotations[annotationKey] = annotationValue
+	node.SetAnnotations(existingAnnotations)
+	_, err = clientset.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to annotate node %s: %v", nodeName, err)
+	}
+	return nil
+}
+
+// CleanUpOrphanNodeObject cleans up orphan nodes by deleting the delete-candidate annotation.
+func CleanUpOrphanNodeObject() error {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get in-cluster config: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes client: %v", err)
+	}
+	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes: %v", err)
+	}
+	for _, node := range nodeList.Items {
+		annotations := node.GetAnnotations()
+		nodeReady := true
+		conditionStatus := node.Status.Conditions
+		for _, condition := range conditionStatus {
+			if condition.Type == v1.NodeReady {
+				if condition.Status != v1.ConditionTrue {
+					nodeReady = false
+				}
+			}
+		}
+		deleteCandidate := annotations[deleteCandidateAnnotation]
+		if !nodeReady && deleteCandidate == "true" {
+			klog.Infof("Cleaning up orphan node %s: node-ready: %t, delete-candidate: %s", node.Name, nodeReady, deleteCandidate)
+			err := DeleteNodeObject([]string{node.Name})
+			if err != nil {
+				return fmt.Errorf("failed to delete node object %s: %v", node.Name, err)
+			}
+		}
+	}
+	return nil
 }

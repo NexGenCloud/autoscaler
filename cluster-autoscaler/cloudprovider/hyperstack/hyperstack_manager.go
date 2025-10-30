@@ -386,6 +386,7 @@ func (h *Hyperstack) GetClusterNodesWithResponse(ctx context.Context, clusterId 
 
 // Refresh updates manager node groups from the provider state.
 func (m *Manager) Refresh() error {
+	defer CleanUpOrphanNodeObject()
 	ctx := context.Background()
 	clusterId, err := GetNodeLabel(clusterIdLabel)
 	if err != nil {

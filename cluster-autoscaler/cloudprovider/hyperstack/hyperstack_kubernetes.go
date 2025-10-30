@@ -207,7 +207,7 @@ func CleanUpOrphanNodeObject() error {
 			klog.Infof("Cleaning up orphan node %s: node-ready: %t, delete-candidate: %s", node.Name, nodeReady, deleteCandidate)
 			err := DeleteNodeObject([]string{node.Name})
 			if err != nil {
-				return fmt.Errorf("failed to delete node object%s: %v", node.Name, err)
+				return fmt.Errorf("failed to delete node object %s: %v", node.Name, err)
 			}
 		}
 	}
